@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Search Example</title>
+</head>
+<body bgcolor="pink">
+<img src="image.jpg" alt="unique image">
+
+<h1>Google Search</h1>
+
+
+<input type="text" id="searchQuery" placeholder="Enter your search query">
+<button id="searchButton">Search</button>
+<br/>
+<button id="speakButton">Speak Search</button>
+
+<div id="searchResults"></div>
+<input type="file" id="uploadPhoto" accept="image/*"><br />
+<button id="uploadButton">Upload Photo</button>
+<br />
+\
+<div id="uploadedPhoto"></div>
+
+<p id="gpsLocation"></p> 
+<div id="weatherInfo"></div>
+
+<button id="startRecording">Start Recording</button>
+    <button id="stopRecording">Stop Recording</button>
+    
+    <div>
+        <h2>Transcribed Text</h2>
+        <p id="transcription"></p>
+    </div>
+    
+    <div>
+        <h2>Text to Speech</h2>
+        <input type="text" id="textToSpeak" placeholder="Enter text...">
+        <button id="speak">Speak</button>
+    </div>
+<h1>Voice to Text Converter</h1>
+    <textarea id="speechToText" rows="4" cols="50"></textarea>
+    <button onclick="voice()">Voice to Text</button>
+<h1>Webcam Streaming and Capture</h1>
+    <div>
+        <video id="webcam" autoplay></video>
+    </div>
+    <button id="startBtn">Start Webcam</button>
+    <button id="captureBtn">Capture</button>
+    <img id="capturedImage" alt="Captured Image" style="display: none; max-width: 100%;">
+
+
+<script>
+document.getElementById("searchButton").addEventListener("click", function() {
+    var searchQuery = document.getElementById("searchQuery").value;
+    var searchResultsDiv = document.getElementById("searchResults");
+    
+    searchResultsDiv.innerHTML = "";
+    
+    var searchUrl = "https://www.google.com/search?q=" + encodeURIComponent(searchQuery);
+    
+    window.open(searchUrl, "_blank");
+});
+
+document.getElementById("speakButton").addEventListener("click", function() {
+    var searchQuery = document.getElementById("searchQuery").value;
+    speakText(searchQuery);
+});
+
+function speakText(text) {
+    if ('speechSynthesis' in window) {
+        var speech = new SpeechSynthesisUtterance();
+        speech.text = text;
+        speech.volume = 1;
+        speech.rate = 1;
+        speech.pitch = 1;
+        speech.lang = 'en-US';
+
+        speechSynthesis.speak(speech);
+    } else {
+        alert("Sorry, your browser doesn't support speech synthesis.");
+    }
+}
+
+document.getElementById("uploadButton").addEventListener("click", function() {
+    var uploadedPhoto = document.getElementById("uploadedPhoto");
+    var input = document.getElementById("uploadPhoto");
+
+    uploadedPhoto.innerHTML = ""; // Clear previous photo (if any)
+
+    var file = input.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = document.createElement("img");
+            img.src = e.target.result;
+            img.style.maxWidth = "100%";
+            uploadedPhoto.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+
+function showGPSLocation(position) {
+    var gpsLocation = document.getElementById("gpsLocation");
+    var latitude = position.coords.latitude;
+    var longitude = position.coords.longitude;
+    gpsLocation.innerHTML = "GPS Location: Latitude " + latitude + ", Longitude " + longitude;
+}
+
+
+window.onload = function() {
+    if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(showGPSLocation);
+    } else {
+        gpsLocation.innerHTML = "Geolocation is not available in this browser.";
+    }
+};
+
+
+        const startRecordingButton = document.getElementById('startRecording');
+        const stopRecordingButton = document.getElementById('stopRecording');
+        const transcriptionElement = document.getElementById('transcription');
+        const textToSpeakInput = document.getElementById('textToSpeak');
+        const speakButton = document.getElementById('speak');
+        
+        let recognition;
+        let synth = window.speechSynthesis;
+        
+        if ('SpeechRecognition' in window) {
+            recognition = new window.SpeechRecognition();
+            recognition.continuous = true;
+            
+            recognition.onstart = () => {
+                console.log('Recording started...');
+            };
+  recognition.onresult = (event) => {
+                const result = event.results[event.results.length - 1][0].transcript;
+                transcriptionElement.textContent = result;
+            };
+            
+            recognition.onend = () => {
+                console.log('Recording stopped.');
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Recognition error:', event.error);
+            };
+        } else {
+            console.error('Speech recognition is not supported in this browser.');
+        }
+        
+        startRecordingButton.addEventListener('click', () => {
+            if (recognition) {
+                recognition.start();
+            }
+        });
+        
+        stopRecordingButton.addEventListener('click', () => {
+            if (recognition) {
+                recognition.stop();
+            }
+        });
+        
+        speakButton.addEventListener('click', () => {
+            const text = textToSpeakInput.value;
+            if (text && synth) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                synth.speak(utterance);
+            }
+        });
+            
+function voice() {
+            var recognition = new webkitSpeechRecognition() || new SpeechRecognition();
+            recognition.lang = "en-GB";
+            
+            recognition.onresult = function (event) {
+                console.log(event);
+                document.getElementById("speechToText").value =
+                    event.results[0][0].transcript;
+            };
+            
+            recognition.start();
+        }
+
+const webcam = document.getElementById("webcam");
+        const startBtn = document.getElementById("startBtn");
+        const captureBtn = document.getElementById("captureBtn");
+        const capturedImage = document.getElementById("capturedImage");
+        let stream;
+
+        startBtn.addEventListener("click", async () => {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcam.srcObject = stream;
+                startBtn.disabled = true;
+                captureBtn.disabled = false;
+        });
+        captureBtn.addEventListener("click", () => {
+            if (stream) {
+                const canvas = document.createElement("canvas");
+                canvas.width = webcam.videoWidth;
+                canvas.height = webcam.videoHeight;
+                const context = canvas.getContext("2d");
+                context.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+                capturedImage.src = canvas.toDataURL("image/png");
+                capturedImage.style.display = "block";
+            }
+        });
+
+</script>
+
+</body>
+</html>
